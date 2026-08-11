@@ -87,6 +87,7 @@ jwt:
     - /api/auth/student/login
     - /api/auth/professor/login
     - /api/auth/admin/login
+    - /api/auth/reissue-token
     - /docs
     - /docs/**
     - /swagger-ui/**
