@@ -82,7 +82,10 @@ springdoc:
 jwt:
   header-key: Authorization
   scheme: Bearer
-  secret: ${JWT_SECRET}
+  issuer: meerkat@meerkat.kr
+  access-audience: lms-api
+  kid: ${JWT_KID}
+  public-key-b64: ${JWT_PUBLIC_KEY_B64}
   public-paths:
     - /api/auth/student/login
     - /api/auth/professor/login

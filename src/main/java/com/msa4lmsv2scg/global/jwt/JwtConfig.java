@@ -6,7 +6,10 @@ import java.util.List;
 
 @ConfigurationProperties(prefix = "jwt")
 public record JwtConfig(
-        String secret,
+        String issuer,
+        String accessAudience,
+        String kid,
+        String publicKeyB64,
         String headerKey,
         String scheme,
         List<String> publicPaths
