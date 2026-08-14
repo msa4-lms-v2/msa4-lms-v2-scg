@@ -27,22 +27,30 @@ spring:
           routes:
             - id: ${AUTH_SERVICE_NAME}
               uri: ${AUTH_SERVICE_URI}
+              metadata:
+                resilience-profile: auth
               predicates:
                 - Path=${AUTH_SERVICE_PREDICATE}
 
             - id: ${ACADEMIC_SERVICE_NAME}
               uri: ${ACADEMIC_SERVICE_URI}
+              metadata:
+                resilience-profile: academic
               predicates:
                 - Path=${ACADEMIC_SERVICE_PREDICATE}
 
             - id: ${PAYMENT_SERVICE_NAME}
               uri: ${PAYMENT_SERVICE_URI}
+              metadata:
+                resilience-profile: payment
               predicates:
                 - Path=${PAYMENT_SERVICE_PREDICATE}
 
             # Open API UI가 각 하위 서비스의 스펙을 Gateway가 origin으로 받아와서 출력하도록 설정
             - id: ${AUTH_SERVICE_NAME}-docs
               uri: ${AUTH_SERVICE_URI}
+              metadata:
+                resilience-profile: auth
               predicates:
                 - Path=/${AUTH_SERVICE_NAME}${AUTH_SERVICE_OPEN_API_PATH}
               filters:
@@ -50,6 +58,8 @@ spring:
 
             - id: ${ACADEMIC_SERVICE_NAME}-docs
               uri: ${ACADEMIC_SERVICE_URI}
+              metadata:
+                resilience-profile: academic
               predicates:
                 - Path=/${ACADEMIC_SERVICE_NAME}${ACADEMIC_SERVICE_OPEN_API_PATH}
               filters:
@@ -57,6 +67,8 @@ spring:
 
             - id: ${PAYMENT_SERVICE_NAME}-docs
               uri: ${PAYMENT_SERVICE_URI}
+              metadata:
+                resilience-profile: payment
               predicates:
                 - Path=/${PAYMENT_SERVICE_NAME}${PAYMENT_SERVICE_OPEN_API_PATH}
               filters:
@@ -97,3 +109,28 @@ jwt:
     - /webjars/**
     - /*/api-docs
     - /*/api-docs/**
+
+gateway:
+  resilience:
+    profiles:
+      auth:
+        timeout: ${GATEWAY_AUTH_TIMEOUT:3s}
+        max-concurrent-calls: ${GATEWAY_AUTH_MAX_CONCURRENT_CALLS:50}
+        failure-rate-threshold: ${GATEWAY_AUTH_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_AUTH_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_AUTH_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_AUTH_OPEN_STATE_DURATION:30s}
+      academic:
+        timeout: ${GATEWAY_ACADEMIC_TIMEOUT:5s}
+        max-concurrent-calls: ${GATEWAY_ACADEMIC_MAX_CONCURRENT_CALLS:100}
+        failure-rate-threshold: ${GATEWAY_ACADEMIC_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_ACADEMIC_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_ACADEMIC_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_ACADEMIC_OPEN_STATE_DURATION:30s}
+      payment:
+        timeout: ${GATEWAY_PAYMENT_TIMEOUT:5s}
+        max-concurrent-calls: ${GATEWAY_PAYMENT_MAX_CONCURRENT_CALLS:50}
+        failure-rate-threshold: ${GATEWAY_PAYMENT_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_PAYMENT_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_PAYMENT_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_PAYMENT_OPEN_STATE_DURATION:30s}
