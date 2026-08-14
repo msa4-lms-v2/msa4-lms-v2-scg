@@ -5,6 +5,12 @@ spring:
   application:
     name: msa4-lms-v2-scg
     version: v1
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2s}
   web:
     error:
       include-stacktrace: always
@@ -89,6 +95,15 @@ springdoc:
       - name: ${PAYMENT_SERVICE_NAME}
         url: /${PAYMENT_SERVICE_NAME}${PAYMENT_SERVICE_OPEN_API_PATH}
 
+scg:
+  rate-limit:
+    enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+    auth:
+      requests: ${GATEWAY_AUTH_RATE_LIMIT_REQUESTS:10}
+      window: ${GATEWAY_AUTH_RATE_LIMIT_WINDOW:1m}
+    general:
+      requests: ${GATEWAY_GENERAL_RATE_LIMIT_REQUESTS:120}
+      window: ${GATEWAY_GENERAL_RATE_LIMIT_WINDOW:1m}
 
 # jwt
 jwt:
