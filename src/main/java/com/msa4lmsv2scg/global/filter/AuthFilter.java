@@ -98,10 +98,10 @@ public class AuthFilter implements GlobalFilter, Ordered {
 
     private Mono<Void> unAuthorized(ServerWebExchange exchange) {
         ServerHttpResponse response = exchange.getResponse();
-        response.setStatusCode(CustomResponseCode.SCG_INVALID_TOKEN_ERROR.getHttpStatus());
+        response.setStatusCode(CustomResponseCode.INVALID_TOKEN_ERROR.getHttpStatus());
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
 
-        byte[] bytes = objectMapper.writeValueAsBytes(GlobalResponseDTO.from(CustomResponseCode.SCG_INVALID_TOKEN_ERROR));
+        byte[] bytes = objectMapper.writeValueAsBytes(GlobalResponseDTO.from(CustomResponseCode.INVALID_TOKEN_ERROR));
         return response.writeWith(Mono.just(response.bufferFactory().wrap(bytes)));
     }
 
