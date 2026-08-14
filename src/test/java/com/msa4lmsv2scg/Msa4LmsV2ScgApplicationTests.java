@@ -9,8 +9,10 @@ import reactor.test.StepVerifier;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(properties = {
-        // Tests must not depend on a developer machine's JWT_SECRET environment variable.
-        "jwt.secret=MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY",
+        // 비대칭 JWT 전환(feature/jwt-public-key-verification) 이후 JwtProvider는 PEM 공개키를 base64로
+        // 감싼 jwt.public-key-b64를 요구한다. 테스트 전용으로 생성한 RSA 키페어의 공개키만 사용한다.
+        "jwt.public-key-b64=LS0tLS1CRUdJTiBQVUJMSUMgS0VZLS0tLS0NCk1JSUJJakFOQmdrcWhraUc5dzBCQVFFRkFBT0NBUThBTUlJQkNnS0NBUUVBbWhXUmMvMGhKVk9wODlUM2craVMNCnlOaml6S3plUnpHR2N1alRrcWd4R3k4VGo5azUwTFNxTjkyWklTYTBHUmJvV1VRcHZVSGc5THdNWGF3WlEzWVQNCk45dlZpN0V2OXVvZ1JGMXJqS2xRQjkzSVAxdVU5TkZKaGR0dWdITmtVam9CZnA1NmVIMUpZU1FtUExyUlJqVkMNClkwL1Y5eXpGTko4NGk2RlF1OVFoRDZKOVNkdkRoeE9tYlQyQks3VUZqY0tZWDFrQUd5ODJ6amhlb01JSzBzcWgNCk9STWRIK0JrZEtJS2NFRlBtZy9iQkl0aUNqQzBXYVlPdnMzMnBPRDRka2lQS3VsVUZpTEFMNGlJalhVNTgwK3ANClRDWk43SFJ2QkpES0pFMG90RHYzS1Z0ZndRQmlmcXIydkdQOWJtMFJzTGdhLzh6bzRyeTJPWk9HeEp4eWtyMHYNClR3SURBUUFCDQotLS0tLUVORCBQVUJMSUMgS0VZLS0tLS0NCg==",
+        "jwt.kid=test-kid-1",
         "APP_PORT=0",
         "CORS_ALLOW_ORIGIN=http://localhost:3000",
         "AUTH_SERVICE_NAME=auth",
