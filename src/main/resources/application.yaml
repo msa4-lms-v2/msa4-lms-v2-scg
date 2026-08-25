@@ -113,6 +113,10 @@ jwt:
   access-audience: lms-api
   kid: ${JWT_KID}
   public-key-b64: ${JWT_PUBLIC_KEY_B64}
+
+  token-pass-through-paths:
+    - /api/auth/initial-password
+
   public-paths:
     - /api/auth/student/login
     - /api/auth/professor/login

@@ -12,6 +12,7 @@ public record JwtConfig(
         String publicKeyB64,
         String headerKey,
         String scheme,
-        List<String> publicPaths
+        List<String> publicPaths,
+        List<String> tokenPassThroughPaths
 ) {
 }
