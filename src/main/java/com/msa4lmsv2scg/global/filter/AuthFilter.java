@@ -40,12 +40,35 @@ public class AuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(@NonNull ServerWebExchange exchange, @NonNull GatewayFilterChain chain) {
 
         try{
-            ServerHttpRequest sanitizedRequest = exchange.getRequest().mutate()
+            /*
+             * 클라이언트가 X-User-Id/X-User-Role을 직접 조작하지 못하도록 모든 요청에서 먼저 제거한다.
+             * 이 헤더들은 일반 Access Token 검증에 성공한 뒤 Gateway만 다시 설정할 수 있다.
+             */
+            ServerHttpRequest internalHeaderSanitizedRequest = exchange.getRequest().mutate()
                     .headers(headers -> {
-                        headers.remove(jwtConfig.headerKey());
                         headers.remove(USER_ID_HEADER);
                         headers.remove(USER_ROLE_HEADER);
                     })
+                    .build();
+
+            /*
+             * 최초 비밀번호 변경 토큰은 일반 Access Token이 아니다.
+             * Gateway의 Access Token 검증을 적용하면 token_type/audience가 달라 거부되므로,
+             * 지정된 경로에서는 Authorization 헤더를 유지한 채 Auth 서비스로 전달한다.
+             * 실제 서명, 만료, token_type, audience 검증은 Auth 서비스가 담당한다.
+             */
+            if (isTokenPassThroughRequest(exchange)) {
+                return chain.filter(exchange.mutate()
+                        .request(internalHeaderSanitizedRequest)
+                        .build());
+            }
+
+            /*
+             * 일반 요청은 원본 Authorization 헤더를 하위 서비스에 전달하지 않는다.
+             * Gateway가 검증한 사용자 정보만 X-User-Id/X-User-Role로 변환해 전달한다.
+             */
+            ServerHttpRequest sanitizedRequest = internalHeaderSanitizedRequest.mutate()
+                    .headers(headers -> headers.remove(jwtConfig.headerKey()))
                     .build();
             ServerWebExchange sanitizedExchange = exchange.mutate().request(sanitizedRequest).build();
 
@@ -92,6 +115,21 @@ public class AuthFilter implements GlobalFilter, Ordered {
 
         PathContainer path = exchange.getRequest().getPath().pathWithinApplication();
         return jwtConfig.publicPaths().stream()
+                .map(PATH_PATTERN_PARSER::parse)
+                .anyMatch(pattern -> pattern.matches(path));
+    }
+
+    /**
+     * Gateway가 토큰을 Access Token으로 검증하지 않고 Authorization 헤더를 그대로 전달할 경로인지 확인한다.
+     * 현재는 Auth 서비스가 직접 검증해야 하는 최초 비밀번호 변경 토큰에 사용한다.
+     */
+    private boolean isTokenPassThroughRequest(ServerWebExchange exchange) {
+        if (jwtConfig.tokenPassThroughPaths() == null) {
+            return false;
+        }
+
+        PathContainer path = exchange.getRequest().getPath().pathWithinApplication();
+        return jwtConfig.tokenPassThroughPaths().stream()
                 .map(PATH_PATTERN_PARSER::parse)
                 .anyMatch(pattern -> pattern.matches(path));
     }
