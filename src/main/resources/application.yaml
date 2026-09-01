@@ -153,3 +153,18 @@ gateway:
         sliding-window-size: ${GATEWAY_PAYMENT_SLIDING_WINDOW_SIZE:20}
         minimum-number-of-calls: ${GATEWAY_PAYMENT_MINIMUM_NUMBER_OF_CALLS:10}
         open-state-duration: ${GATEWAY_PAYMENT_OPEN_STATE_DURATION:30s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,redis
