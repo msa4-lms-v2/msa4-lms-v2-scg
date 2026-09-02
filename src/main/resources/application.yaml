@@ -1,3 +1,170 @@
+server:
+  port: ${APP_PORT}
+
 spring:
   application:
     name: msa4-lms-v2-scg
+    version: v1
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:2s}
+  web:
+    error:
+      include-stacktrace: always
+      include-message: always
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            - name: RequestSize
+              args:
+                maxSize: 20MB
+          globalcors:
+            cors-configurations:
+              '[/**]':
+                allowed-origins: ${CORS_ALLOW_ORIGIN}
+                allowed-methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+                allowed_headers: "*"
+                allow-credentials: true
+          routes:
+            - id: ${AUTH_SERVICE_NAME}
+              uri: ${AUTH_SERVICE_URI}
+              metadata:
+                resilience-profile: auth
+              predicates:
+                - Path=${AUTH_SERVICE_PREDICATE}
+
+            - id: ${ACADEMIC_SERVICE_NAME}
+              uri: ${ACADEMIC_SERVICE_URI}
+              metadata:
+                resilience-profile: academic
+              predicates:
+                - Path=${ACADEMIC_SERVICE_PREDICATE}
+
+            - id: ${PAYMENT_SERVICE_NAME}
+              uri: ${PAYMENT_SERVICE_URI}
+              metadata:
+                resilience-profile: payment
+              predicates:
+                - Path=${PAYMENT_SERVICE_PREDICATE}
+
+            # Open API UI가 각 하위 서비스의 스펙을 Gateway가 origin으로 받아와서 출력하도록 설정
+            - id: ${AUTH_SERVICE_NAME}-docs
+              uri: ${AUTH_SERVICE_URI}
+              metadata:
+                resilience-profile: auth
+              predicates:
+                - Path=/${AUTH_SERVICE_NAME}${AUTH_SERVICE_OPEN_API_PATH}
+              filters:
+                - RewritePath=/${AUTH_SERVICE_NAME}${AUTH_SERVICE_OPEN_API_PATH}, ${AUTH_SERVICE_OPEN_API_PATH}
+
+            - id: ${ACADEMIC_SERVICE_NAME}-docs
+              uri: ${ACADEMIC_SERVICE_URI}
+              metadata:
+                resilience-profile: academic
+              predicates:
+                - Path=/${ACADEMIC_SERVICE_NAME}${ACADEMIC_SERVICE_OPEN_API_PATH}
+              filters:
+                - RewritePath=/${ACADEMIC_SERVICE_NAME}${ACADEMIC_SERVICE_OPEN_API_PATH}, ${ACADEMIC_SERVICE_OPEN_API_PATH}
+
+            - id: ${PAYMENT_SERVICE_NAME}-docs
+              uri: ${PAYMENT_SERVICE_URI}
+              metadata:
+                resilience-profile: payment
+              predicates:
+                - Path=/${PAYMENT_SERVICE_NAME}${PAYMENT_SERVICE_OPEN_API_PATH}
+              filters:
+                - RewritePath=/${PAYMENT_SERVICE_NAME}${PAYMENT_SERVICE_OPEN_API_PATH}, ${PAYMENT_SERVICE_OPEN_API_PATH}
+
+
+# Open API (Swagger)
+springdoc:
+  swagger-ui:
+    path: /docs
+    urls:
+      - name: ${AUTH_SERVICE_NAME}
+        url: /${AUTH_SERVICE_NAME}${AUTH_SERVICE_OPEN_API_PATH}
+
+      - name: ${ACADEMIC_SERVICE_NAME}
+        url: /${ACADEMIC_SERVICE_NAME}${ACADEMIC_SERVICE_OPEN_API_PATH}
+
+      - name: ${PAYMENT_SERVICE_NAME}
+        url: /${PAYMENT_SERVICE_NAME}${PAYMENT_SERVICE_OPEN_API_PATH}
+
+scg:
+  rate-limit:
+    enabled: ${GATEWAY_RATE_LIMIT_ENABLED:true}
+    auth:
+      requests: ${GATEWAY_AUTH_RATE_LIMIT_REQUESTS:10}
+      window: ${GATEWAY_AUTH_RATE_LIMIT_WINDOW:1m}
+    general:
+      requests: ${GATEWAY_GENERAL_RATE_LIMIT_REQUESTS:120}
+      window: ${GATEWAY_GENERAL_RATE_LIMIT_WINDOW:1m}
+
+# jwt
+jwt:
+  header-key: Authorization
+  scheme: Bearer
+  issuer: meerkat@meerkat.kr
+  access-audience: lms-api
+  kid: ${JWT_KID}
+  public-key-b64: ${JWT_PUBLIC_KEY_B64}
+
+  token-pass-through-paths:
+    - /api/auth/initial-password
+
+  public-paths:
+    - /api/auth/student/login
+    - /api/auth/professor/login
+    - /api/auth/admin/login
+    - /api/auth/reissue-token
+    - /docs
+    - /docs/**
+    - /swagger-ui/**
+    - /webjars/**
+    - /*/api-docs
+    - /*/api-docs/**
+
+gateway:
+  resilience:
+    profiles:
+      auth:
+        timeout: ${GATEWAY_AUTH_TIMEOUT:3s}
+        max-concurrent-calls: ${GATEWAY_AUTH_MAX_CONCURRENT_CALLS:50}
+        failure-rate-threshold: ${GATEWAY_AUTH_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_AUTH_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_AUTH_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_AUTH_OPEN_STATE_DURATION:30s}
+      academic:
+        timeout: ${GATEWAY_ACADEMIC_TIMEOUT:5s}
+        max-concurrent-calls: ${GATEWAY_ACADEMIC_MAX_CONCURRENT_CALLS:100}
+        failure-rate-threshold: ${GATEWAY_ACADEMIC_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_ACADEMIC_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_ACADEMIC_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_ACADEMIC_OPEN_STATE_DURATION:30s}
+      payment:
+        timeout: ${GATEWAY_PAYMENT_TIMEOUT:5s}
+        max-concurrent-calls: ${GATEWAY_PAYMENT_MAX_CONCURRENT_CALLS:50}
+        failure-rate-threshold: ${GATEWAY_PAYMENT_FAILURE_RATE_THRESHOLD:50}
+        sliding-window-size: ${GATEWAY_PAYMENT_SLIDING_WINDOW_SIZE:20}
+        minimum-number-of-calls: ${GATEWAY_PAYMENT_MINIMUM_NUMBER_OF_CALLS:10}
+        open-state-duration: ${GATEWAY_PAYMENT_OPEN_STATE_DURATION:30s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,redis

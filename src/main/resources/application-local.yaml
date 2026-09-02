@@ -1,0 +1,16 @@
+jwt:
+  token-pass-through-paths:
+    - /api/auth/initial-password
+  public-paths:
+    - /api/auth/student/login
+    - /api/auth/professor/login
+    - /api/auth/admin/login
+    - /api/auth/reissue-token
+    - /api/academic/account-provisionings/students
+    - /api/academic/account-provisionings/professors
+    - /docs
+    - /docs/**
+    - /swagger-ui/**
+    - /webjars/**
+    - /*/api-docs
+    - /*/api-docs/**
