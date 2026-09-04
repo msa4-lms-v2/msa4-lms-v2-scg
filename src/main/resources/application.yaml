@@ -122,6 +122,7 @@ jwt:
     - /api/auth/professor/login
     - /api/auth/admin/login
     - /api/auth/reissue-token
+    - /api/payment/webhooks/**
     - /docs
     - /docs/**
     - /swagger-ui/**
