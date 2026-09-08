@@ -34,6 +34,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
     private final JwtProvider jwtProvider;
     private final JwtConfig jwtConfig;
     private final ObjectMapper objectMapper;
+    private final com.msa4lmsv2scg.global.websocket.WebSocketTicketService tickets;
 
     @Override
     @NonNull
@@ -48,8 +49,30 @@ public class AuthFilter implements GlobalFilter, Ordered {
                     .headers(headers -> {
                         headers.remove(USER_ID_HEADER);
                         headers.remove(USER_ROLE_HEADER);
+                        headers.remove("X-User-Expires-At");
                     })
                     .build();
+
+            if ("/ws/notifications".equals(exchange.getRequest().getPath().value())) {
+                if (exchange.getRequest().getMethod() != HttpMethod.GET
+                        || !"websocket".equalsIgnoreCase(exchange.getRequest().getHeaders().getUpgrade())) {
+                    return unAuthorized(exchange);
+                }
+                return tickets.consume(exchange.getRequest().getQueryParams().getFirst("ticket"))
+                        .flatMap(user -> {
+                            var uri = org.springframework.web.util.UriComponentsBuilder
+                                    .fromUri(internalHeaderSanitizedRequest.getURI()).replaceQuery(null).build(true).toUri();
+                            var request = internalHeaderSanitizedRequest.mutate().uri(uri).headers(headers -> {
+                                headers.remove(jwtConfig.headerKey());
+                                headers.set(USER_ID_HEADER, user.id());
+                                headers.set(USER_ROLE_HEADER, user.role());
+                                headers.set("X-User-Expires-At", Long.toString(user.expiresAt().getEpochSecond()));
+                            }).build();
+                            return chain.filter(exchange.mutate().request(request).build());
+                        })
+                        .onErrorResume(org.springframework.web.server.ResponseStatusException.class,
+                                exception -> unAuthorized(exchange));
+            }
 
             /*
              * 최초 비밀번호 변경 토큰은 일반 Access Token이 아니다.
