@@ -31,6 +31,10 @@ spring:
                 allowed_headers: "*"
                 allow-credentials: true
           routes:
+            - id: academic-notification-websocket
+              uri: ${ACADEMIC_WS_URI:ws://localhost:8082}
+              predicates:
+                - Path=/ws/notifications
             - id: ${AUTH_SERVICE_NAME}
               uri: ${AUTH_SERVICE_URI}
               metadata:
