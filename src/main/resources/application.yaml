@@ -123,6 +123,7 @@ jwt:
     - /api/auth/admin/login
     - /api/auth/reissue-token
     - /api/payment/webhooks/**
+    - /api/payment/certificates/verify
     - /docs
     - /docs/**
     - /swagger-ui/**
