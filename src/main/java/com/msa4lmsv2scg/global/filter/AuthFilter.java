@@ -40,6 +40,9 @@ public class AuthFilter implements GlobalFilter, Ordered {
     @NonNull
     public Mono<Void> filter(@NonNull ServerWebExchange exchange, @NonNull GatewayFilterChain chain) {
 
+        if (exchange.getRequest().getPath().value().startsWith("/api/academic/internal/admissions")) {
+            return unAuthorized(exchange);
+        }
         try{
             /*
              * 클라이언트가 X-User-Id/X-User-Role을 직접 조작하지 못하도록 모든 요청에서 먼저 제거한다.
@@ -47,6 +50,7 @@ public class AuthFilter implements GlobalFilter, Ordered {
              */
             ServerHttpRequest internalHeaderSanitizedRequest = exchange.getRequest().mutate()
                     .headers(headers -> {
+                        headers.remove("X-Admission-Token");
                         headers.remove(USER_ID_HEADER);
                         headers.remove(USER_ROLE_HEADER);
                         headers.remove("X-User-Expires-At");
